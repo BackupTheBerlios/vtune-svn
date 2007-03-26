@@ -1,0 +1,16 @@
+AC_INIT(configure.in)
+
+AM_INIT_AUTOMAKE(vtune, 0.1)
+
+AC_LANG_CPLUSPLUS
+AC_PROG_CXX
+
+AC_LIBTOOL_DLOPEN
+AC_DISABLE_SHARED
+AC_PROG_LIBTOOL
+
+PKG_CHECK_MODULES([VTUNE_CORE], [jack samplerate])
+PKG_CHECK_MODULES([VTUNE_STAND], [QtCore QtGui])
+AC_PATH_PROG([MOC4], [moc], [/usr/lib/qt4/bin/moc],[$PATH:/usr/lib64/qt4/bin:/usr/X11R6/lib/qt4/bin:/usr/X11R6/lib64/qt4/bin])
+
+AC_OUTPUT(Makefile src/Makefile src/vtune-core/Makefile src/vtune-stand/Makefile)
