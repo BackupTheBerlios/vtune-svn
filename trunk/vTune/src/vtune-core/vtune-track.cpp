@@ -26,6 +26,15 @@ vTuneTrack::vTuneTrack(vtune_track_type _type, unsigned short _size, jack_nframe
 	filtered = new float [process_size];
 	fft_mag = new double [process_size];
 	peeks = new unsigned short [process_size];
+	hps = new double [process_size >> 1];
+	window = new double [process_size];
+
+	//compute window..
+	for (unsigned short i = 0; i < process_size; i++)
+	{
+		window [i] = 0.5 * (1 - cos(2 * PI * (double) i / ((double) process_size - 1)));
+	}
+	
 
 	scale = new vTuneScale();
 	scale->Init(sample_rate, buffer_size);
@@ -80,9 +89,13 @@ vTuneTrack::~vTuneTrack()
 		delete [] fft_mag;
 	if(peeks)
 		delete [] peeks;
+	if(hps)
+		delete [] hps;
+	if(window)
+		delete [] window;
 }
 
-void vTuneTrack::TrackFFT(jack_default_audio_sample_t *buffer, vtune_data *data)
+void vTuneTrack::TrackFFT1(jack_default_audio_sample_t *buffer, vtune_data *data)
 {
 	unsigned short fft_half_size = process_size >> 1;
 
@@ -101,13 +114,13 @@ void vTuneTrack::TrackFFT(jack_default_audio_sample_t *buffer, vtune_data *data)
 	{
 		signal [i] = sample_rate * (filtered [i] - filtered [i - 1]);
 		//signal [i] = track_buffer [i];
-		signal [i] *= 0.5 * (1 - cos(2 * PI * (double) i / ((double) process_size - 1)));
+		signal [i] *= window [i];
 	}
 
 	fft->SetSamples(signal, process_size);
 	fft->DoFFT();
 	fft_type *fft_res = fft->GetSamples();
-		data->fft_res = fft_res;
+	data->fft_res = fft_res;
 	data->fft_size = process_size;
 	data->fft_mag = fft_mag;
 	double max_amp = 1;
@@ -156,7 +169,7 @@ void vTuneTrack::TrackFFT(jack_default_audio_sample_t *buffer, vtune_data *data)
 	{
 		data->fft_mag [i] /= max_amp;
 	}
-	unsigned short num_peeks = GetPeeks(data->fft_mag, fft_half_size);
+	unsigned short num_peeks = GetPeeks(data->fft_mag, fft_half_size, peek_range_left, peek_range_right, 0.1);
 	
 	if (num_peeks < 2 || (num_peeks >= fft_half_size >> 1))
 	{
@@ -188,12 +201,11 @@ void vTuneTrack::TrackFFT(jack_default_audio_sample_t *buffer, vtune_data *data)
 	data->valid = scale->GetNote(data->freq, data->scale, data->shift);
 }
 
-unsigned short vTuneTrack::GetPeeks(const double *spectrum, unsigned short size)
+unsigned short vTuneTrack::GetPeeks(const double *spectrum, unsigned short size, unsigned short range_left, unsigned short range_right, double treshhold)
 {
-	unsigned short i = peek_range_left + 1;
+	unsigned short i = range_left + 1;
 	unsigned short index = 0;
-	double treshhold = 0.1;
-	unsigned short limit = size > (peek_range_right - 1)? (peek_range_right - 1) : size;
+	unsigned short limit = size > (range_right - 1)? (range_right - 1) : size;
 	unsigned short max_index = 0;
 	double max_peek = 0;
 	while (i < limit)
@@ -227,15 +239,106 @@ void vTuneTrack::TrackACF(jack_default_audio_sample_t *buffer, vtune_data *data)
 {
 }
 
+void vTuneTrack::TrackHPS(jack_default_audio_sample_t *buffer, vtune_data *data)
+{
+	unsigned short fft_half_size = process_size >> 1;
+
+	//filter signal and remove frequences above 4KHz and below 100Hz
+	bp_filter->Process(buffer, signal, false);
+	
+	signal [0] = 0;
+	signal [process_size - 1] = 0;
+	for (unsigned short i = 1; i < process_size - 1; i++)
+	{
+		signal [i] *= window [i];
+	}
+
+	fft->SetSamples(signal, process_size);
+	fft->DoFFT();
+	fft_type *fft_res = fft->GetSamples();
+	data->fft_res = fft_res;
+	data->fft_size = fft_half_size;
+	data->fft_mag = fft_mag;
+	double max_amp = 1;
+	for (unsigned short i = 0; i < fft_half_size; i++)
+	{
+		double re = fft_res [i].real();
+		double im = fft_res [i].imag();
+		double square = re * re + im * im;
+		if (square == 0)
+			fft_mag [i] = 0;
+		else
+			fft_mag [i] = sqrt(square);
+	}
+
+	memcpy(hps, fft_mag, fft_half_size * sizeof(double));
+
+	unsigned short limit = (unsigned short)floor((fft_half_size - 1) / 2);
+
+	for(unsigned short i = 0; i < limit; i++)
+	{
+		double x = (fft_mag [2 * i] + fft_mag [2 * i + 1]) / 2;
+		hps [i] *= x;
+	}
+
+	limit = (unsigned short)floor((fft_half_size - 2) / 3);
+
+	for(unsigned short i = 0; i < limit; i++)
+	{
+		double x = (fft_mag [3 * i] + fft_mag [3 * i + 1] + fft_mag [3 * i + 2]) / 3;
+		hps [i] *= x;
+	}
+
+	for(unsigned short i = limit; i < fft_half_size; i++)
+	{
+		fft_mag [i] = 0;
+	}
+
+	unsigned short num_peeks = GetPeeks(data->fft_mag, limit, 0, limit, 0.001);
+
+	if (num_peeks < 1 || (num_peeks >= limit))
+	{
+		data->peek = 0;
+		data->index = 0;
+		data->freq = 0;
+	}
+	else
+	{
+		unsigned short max_index = 0;
+		double max_peek = 0;
+		for (unsigned short i = 0; i < num_peeks; i++)
+		{
+			unsigned short index = peeks [i];
+			double amp = data->fft_mag [index];
+			if (max_peek < amp)
+			{
+				max_peek = amp;
+				max_index = index;
+			}
+	
+		}
+	
+		data->peek = max_peek;
+		data->index = max_index;
+		data->freq = fft->GetFreq(max_index);
+	}
+	
+	data->valid = scale->GetNote(data->freq, data->scale, data->shift);
+	
+}
+
 void vTuneTrack::Track(jack_default_audio_sample_t *buffer, vtune_data *data)
 {
 	switch(type)
 	{
-	case VTRACK_FFT:
-		TrackFFT(buffer, data);
+	case VTRACK_FFT1:
+		TrackFFT1(buffer, data);
 		break;
 	case VTRACK_ACF:
 		TrackACF(buffer, data);
+		break;
+	case VTRACK_HPS:
+		TrackHPS(buffer, data);
 		break;
 	default:
 		break;

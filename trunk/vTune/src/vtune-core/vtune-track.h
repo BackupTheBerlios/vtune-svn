@@ -16,8 +16,9 @@ struct vtune_data;
 
 enum vtune_track_type
 {
-	VTRACK_FFT = 0,
- 	VTRACK_ACF
+	VTRACK_FFT1 = 0,
+ 	VTRACK_ACF,
+  	VTRACK_HPS
 };
 
 class vTuneTrack
@@ -32,9 +33,10 @@ public:
 	};
 	
 private:
-	void TrackFFT(jack_default_audio_sample_t *buffer, vtune_data *data);
+	void TrackFFT1(jack_default_audio_sample_t *buffer, vtune_data *data);
 	void TrackACF(jack_default_audio_sample_t *buffer, vtune_data *data);
-	unsigned short GetPeeks(const double *spectrum, unsigned short size);
+	void TrackHPS(jack_default_audio_sample_t *buffer, vtune_data *data);
+	unsigned short GetPeeks(const double *spectrum, unsigned short size, unsigned short range_left, unsigned short range_right, double treshhold);
 	vtune_track_type type;
 	vTuneFFT *fft;
 	vTuneFFT *fft1;
@@ -46,6 +48,8 @@ private:
 	jack_default_audio_sample_t *filtered;
 	unsigned short *peeks;
 	double *fft_mag;
+	double *hps;
+	double *window;
 	unsigned short process_size;
 	jack_nframes_t sample_rate;
 	jack_nframes_t buffer_size;

@@ -19,7 +19,7 @@
  ***************************************************************************/
 
 typedef std::complex<double> fft_type;
-#define PI 3.14159265
+#define PI 3.14159265358979323846
 class vTuneFFT
 {
 public:
