@@ -67,7 +67,7 @@ bool vTune::Init()
 	// but will add latency
 	//
 
-	process_size = 1024 * 4;
+	process_size = 1024 * 2;
 
 	tracker = new vTuneTrack(VTRACK_HPS, process_size, sample_rate, buffer_size);
 

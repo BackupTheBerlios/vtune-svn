@@ -176,23 +176,25 @@ void vTuneFFT::Sort()
 void vTuneFFT::DoFFT()
 {
 	Sort();
+	fft_type t;
 
 	for (unsigned short i = 1; i <= Stages; i++)
 	{
 
 		unsigned short le = (1 << i);
 		unsigned short le2 = le >> 1;
+		fft_type exp = ExpLut [i];
 		fft_type u = 1;
 		for (unsigned short j = 0; j < le2; j++)
 		{
 			for (unsigned short l = j; l < Points; l += le)
 			{
 				unsigned short ip = l + le2;
-				fft_type t = u * Data [ip];
+				t = u * Data [ip];
 				Data [ip] = Data [l] - t;
 				Data [l] += t;
 			}
-			u *= ExpLut [i];
+			u *= exp;
 		}
 
 	}
