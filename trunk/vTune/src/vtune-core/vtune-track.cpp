@@ -293,7 +293,15 @@ void vTuneTrack::TrackHPS(jack_default_audio_sample_t *buffer, vtune_data *data)
 
 	for(unsigned short i = 0; i < limit; i++)
 	{
-		double x = (fft_mag [3 * i] + fft_mag [3 * i + 1] + fft_mag [3 * i + 2] + fft_mag [3 * i + 3]) / 4;
+		double x = (fft_mag [3 * i] + fft_mag [4 * i + 1] + fft_mag [4 * i + 2] + fft_mag [4 * i + 3]) / 4;
+		hps [i] *= x;
+	}
+
+	limit = (unsigned short)floor((fft_half_size - 4) / 5);
+
+	for(unsigned short i = 0; i < limit; i++)
+	{
+		double x = (fft_mag [5 * i] + fft_mag [5 * i + 1] + fft_mag [5 * i + 2] + fft_mag [5 * i + 3] + fft_mag [5 * i + 4]) / 5;
 		hps [i] *= x;
 	}
 
