@@ -55,6 +55,7 @@ private:
 	jack_nframes_t buffer_size;
 	unsigned short peek_range_left;
 	unsigned short peek_range_right;
+	unsigned short fft_half_size;
 };
 
 #endif

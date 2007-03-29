@@ -65,6 +65,8 @@ vTuneTrack::vTuneTrack(vtune_track_type _type, unsigned short _size, jack_nframe
 	peek_range_right = (sample_rate / 2) / 100;
 	peek_range_left = (sample_rate / 2) / 3000;
 
+	fft_half_size = process_size >> 1;
+
 	VTUNE_DBG("Processing range: %d - %d.", peek_range_left, peek_range_right);
 }
 
@@ -97,8 +99,6 @@ vTuneTrack::~vTuneTrack()
 
 void vTuneTrack::TrackFFT1(jack_default_audio_sample_t *buffer, vtune_data *data)
 {
-	unsigned short fft_half_size = process_size >> 1;
-
 	//filter signal and remove frequences above 4KHz and below 100Hz
 	//lp_filter->Process(track_buffer, filtered, false);
 	//hp_filter->Process(filtered, filtered, true);
@@ -241,8 +241,6 @@ void vTuneTrack::TrackACF(jack_default_audio_sample_t *buffer, vtune_data *data)
 
 void vTuneTrack::TrackHPS(jack_default_audio_sample_t *buffer, vtune_data *data)
 {
-	unsigned short fft_half_size = process_size >> 1;
-
 	//filter signal and remove frequences above 4KHz and below 100Hz
 	bp_filter->Process(buffer, signal, false);
 	
