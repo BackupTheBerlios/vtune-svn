@@ -69,7 +69,7 @@ bool vTune::Init()
 
 	process_size = 1024 * 2;
 
-	tracker = new vTuneTrack(VTRACK_HPS, process_size, sample_rate, buffer_size);
+	tracker = new vTuneTrack(VTRACK_FFT1, process_size, sample_rate, buffer_size);
 
 	track_buffer = new float [process_size];
 
@@ -204,6 +204,8 @@ void vTune::TrackData()
 	}
 	
 	data.fft_mag = buff;*/
+	data.samples = track_buffer;
+	data.samples_size = process_size;
 	if(callback)
 		callback(&data);
 }

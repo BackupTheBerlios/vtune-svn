@@ -47,6 +47,8 @@ struct vtune_data
 	double *fft_mag;
 	fft_type *fft_res;
 	unsigned short fft_size;
+	float *samples;
+	unsigned short samples_size;
 	double peek;
 	double index;
 	double freq;

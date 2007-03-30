@@ -77,6 +77,6 @@ void vMainWindow::RepaintSpectrum(vtune_data *data)
 void vMainWindow::callback(vtune_data *data)
 {
 	vMainWindow *mainWindow = (vMainWindow *)data->arg;
-	mainWindow->spectrum->SetData(data->fft_mag, data->fft_size / 2, (unsigned short)data->index);
+	mainWindow->spectrum->SetData(data);
 	mainWindow->emit spectrumChanged(data);
 }

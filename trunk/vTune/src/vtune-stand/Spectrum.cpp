@@ -24,7 +24,8 @@ vSpectrum::vSpectrum(QWidget *Parent) : QWidget(Parent)
 {
 	fftmag = 0;
 	fftmag_lut = 0;
-	fftmag_length = 0;
+	fft_size = 0;
+	samples = 0;
 }
 
 void vSpectrum::paint(QPainter *painter, QPaintEvent *event)
@@ -37,9 +38,14 @@ void vSpectrum::paint(QPainter *painter, QPaintEvent *event)
 	int width = event->rect().width();
 	//width = width < 512 ? width : 512;
 	int height = event->rect().height();
+	int half_height = height >> 1;
+	
 	QPen pen1(QColor(0, 0, 0));
 	QPen pen2(QColor(200, 200, 200));
 	QPen pen3(QColor(0, 0, 255));
+	painter->setPen(pen1);
+	painter->drawLine(0, half_height, width, half_height);
+	int last_pt = 0;
 	for (unsigned short i = 0; i < width; i ++)
 	{
 		double delta = fftmag_lut [i] - fftmag [i];
@@ -47,19 +53,34 @@ void vSpectrum::paint(QPainter *painter, QPaintEvent *event)
 			fftmag_lut [i] = fftmag [i];
 		else
 			fftmag_lut [i] -= (delta / 4);
-		int pt = fftmag_lut [i] * height;
-		int k = i;
+		int pt = fftmag_lut [i] * half_height;
 		if (i == max_peek)
 			painter->setPen(pen3);
 		else
 			painter->setPen(pen1);
-		painter->drawLine(k, height, k, height - pt);
-		if (pt < height)
+		painter->drawLine(i, height, i, height - pt);
+		/*if (pt < height)
 		{
 			painter->setPen(pen2);
-			painter->drawLine(k, height - pt, k, 0);
-		}
+			painter->drawLine(i, height - pt, i, half_height);
+		}*/
+		
+		int offset = (half_height >> 1);
 
+		painter->setPen(pen1);
+		pt = samples [i] * half_height;
+		pt = offset + pt;
+
+		if(!i)
+			painter->drawLine(i, pt, i, pt);
+		else
+			painter->drawLine(i - 1, last_pt, i, pt);
+		//painter->setPen(pen2);
+		//painter->drawLine(i, half_height - pt, i, half_height - pt - 1);
+		
+		//painter->drawLine(i, half_height, i, half_height - pt);
+		//painter->drawPoint(i, pt);
+		last_pt = pt;
 	}
 
 }
@@ -74,11 +95,11 @@ void vSpectrum::paintEvent(QPaintEvent *event)
 	painter.end();
 }
 
-void vSpectrum::SetData(double *_fftmag, unsigned short _fftmag_length, unsigned short _max_peek)
+void vSpectrum::SetData(vtune_data *data)
 {
-	if (fftmag_length != _fftmag_length)
+	if (data->fft_size != fft_size)
 	{
-		fftmag_length = _fftmag_length;
+		fft_size = data->fft_size;
 		if (fftmag)
 		{
 			delete [] fftmag;
@@ -92,18 +113,35 @@ void vSpectrum::SetData(double *_fftmag, unsigned short _fftmag_length, unsigned
 		}
 	}
 
+	if(data->samples_size != samples_size)
+	{
+		samples_size = data->samples_size;
+		if(samples)
+		{
+			delete [] samples;
+			samples = 0;
+		}
+		
+	}
+
 	if (!fftmag)
 	{
-		fftmag = new double [fftmag_length];
+		fftmag = new double [fft_size];
 	}
 
 	if (!fftmag_lut)
 	{
-		fftmag_lut = new double [fftmag_length];
-		memset(fftmag_lut, 0, fftmag_length * sizeof(double));
+		fftmag_lut = new double [fft_size];
+		memset(fftmag_lut, 0, fft_size * sizeof(double));
 	}
 
-	memcpy(fftmag, _fftmag, fftmag_length * sizeof(double));
-	max_peek = _max_peek;
+	if(!samples)
+	{
+		samples = new float [samples_size];
+	}
+
+	memcpy(fftmag, data->fft_mag, fft_size * sizeof(double));
+	memcpy(samples, data->samples, samples_size * sizeof(float));
+	max_peek = data->index;
 }
 

@@ -24,13 +24,15 @@ class vSpectrum : public QWidget
 
 public:
 	vSpectrum(QWidget *Parent);
-	void SetData(double *_fftmag, unsigned short _fftmag_length, unsigned short _max_peek);
+	void SetData(vtune_data *data);
 private:
 	void paint(QPainter *painter, QPaintEvent *event);
 	void paintEvent(QPaintEvent *event);
 	double *fftmag;
 	double *fftmag_lut;
-	unsigned short fftmag_length;
+	float *samples;
+	unsigned short fft_size;
+	unsigned short samples_size;
 	unsigned short max_peek;
 };
 
