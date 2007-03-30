@@ -62,8 +62,8 @@ vTuneTrack::vTuneTrack(vtune_track_type _type, unsigned short _size, jack_nframe
 	bp_filter->Init(&filter_opts, process_size);
 
 	//processing range. (100Hz - 3000Hz)
-	peek_range_right = (sample_rate / 2) / 90;
-	peek_range_left = (sample_rate / 2) / 3000;
+	peek_range_right = (sample_rate / 2) / 40;
+	peek_range_left = (sample_rate / 2) / 1500;
 
 	fft_half_size = process_size >> 1;
 
@@ -237,6 +237,32 @@ unsigned short vTuneTrack::GetPeeks(const double *spectrum, unsigned short size,
 
 void vTuneTrack::TrackACF(jack_default_audio_sample_t *buffer, vtune_data *data)
 {
+	//VTUNE_DBG("!!");
+	unsigned short start = 100;
+	data->fft_mag = fft_mag;
+	for(unsigned short i = start; i < process_size - start; i++)
+	{
+		data->fft_mag [i - start] = abs(buffer [i] * buffer [i - start]);
+	}
+
+	data->fft_size = process_size - (start >> 1);
+	data->fft_res = 0;
+
+	double max_peek = 0;
+
+	/*for(unsigned short i = 0; i < data->fft_size; i++)
+	{
+		double peek = abs(data->fft_mag [i]);
+		if(peek > max_peek)
+			max_peek = peek;
+		
+	}
+
+	for(unsigned short i = 0; i < data->fft_size; i++)
+	{
+		data->fft_mag [i] /= max_peek;
+	}*/
+	//VTUNE_DBG("!!!");
 	
 }
 

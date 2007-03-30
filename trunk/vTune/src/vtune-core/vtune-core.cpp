@@ -69,7 +69,7 @@ bool vTune::Init()
 
 	process_size = 1024 * 2;
 
-	tracker = new vTuneTrack(VTRACK_FFT1, process_size, sample_rate, buffer_size);
+	tracker = new vTuneTrack(VTRACK_ACF, process_size, sample_rate, buffer_size);
 
 	track_buffer = new float [process_size];
 

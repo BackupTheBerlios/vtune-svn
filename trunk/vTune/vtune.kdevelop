@@ -183,7 +183,9 @@
       <synchronize>true</synchronize>
       <orientation>Vertical</orientation>
     </splitheadersource>
-    <references/>
+    <references>
+      <pcs>Qt4</pcs>
+    </references>
   </kdevcppsupport>
   <cppsupportpart>
     <filetemplates>
