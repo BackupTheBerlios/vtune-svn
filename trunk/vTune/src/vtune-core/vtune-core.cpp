@@ -182,6 +182,7 @@ void vTune::SetCallback(VTUNE_CALLBACK *_callback, void *_arg)
 
 void vTune::TrackData()
 {
+	data.solid = true;
 	tracker->Track(track_buffer, &data);
 	/*static double *buff = 0;
 	if(!buff)

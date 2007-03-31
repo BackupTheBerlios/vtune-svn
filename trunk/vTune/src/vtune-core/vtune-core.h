@@ -55,6 +55,7 @@ struct vtune_data
 	vtune_scale scale;
 	double shift;
 	bool valid;
+	bool solid;
 };
 
 typedef void VTUNE_CALLBACK(vtune_data *data);

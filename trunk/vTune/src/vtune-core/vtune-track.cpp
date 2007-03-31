@@ -238,22 +238,29 @@ unsigned short vTuneTrack::GetPeeks(const double *spectrum, unsigned short size,
 void vTuneTrack::TrackACF(jack_default_audio_sample_t *buffer, vtune_data *data)
 {
 	//VTUNE_DBG("!!");
-	unsigned short start = 100;
+	//unsigned short start = 100;
+	data->solid = false;
 	data->fft_mag = fft_mag;
 	int cnt = 0;
-	for(unsigned short i = start; i < process_size - start; i++)
+	unsigned short start;
+	memset(data->fft_mag, 0, process_size * sizeof(double));
+	unsigned short acf_size = process_size >> 2;
+	for(unsigned short start = 1; start < acf_size; start++)
 	{
-		data->fft_mag [i - start] = fabs(buffer [i]) * fabs(buffer [i - start]);
-		if(cnt++ < 10)
+		for(unsigned short i = start; i < acf_size - start; i++)
 		{
-			VTUNE_DBG("ACF: %f, %f", data->fft_mag [cnt], fabs(buffer [i]));
+			data->fft_mag [start - 1] += fabs(buffer [i]) * fabs(buffer [i - start]);
+			/*if(cnt++ < 10)
+			{
+				VTUNE_DBG("ACF: %f, %f", data->fft_mag [cnt], fabs(buffer [i]));
+			}*/
 		}
 	}
 
-	data->fft_size = process_size - (start << 1);
+	data->fft_size = acf_size - 1;
 	data->fft_res = 0;
 
-	/*double max_peek = 0;
+	double max_peek = 1;
 
 	for(unsigned short i = 0; i < data->fft_size; i++)
 	{
@@ -261,14 +268,14 @@ void vTuneTrack::TrackACF(jack_default_audio_sample_t *buffer, vtune_data *data)
 		if(peek > max_peek)
 			max_peek = peek;
 		
-	}*/
+	}
 
-	for(unsigned short i = 0; i < data->fft_size; i++)
+	for (unsigned short i = 0; i < data->fft_size; i++)
 	{
-		data->fft_mag [i] *= 3;
+		data->fft_mag [i] /= max_peek;
 	}
 	//VTUNE_DBG("!!!");
-	
+
 }
 
 void vTuneTrack::TrackHPS(jack_default_audio_sample_t *buffer, vtune_data *data)

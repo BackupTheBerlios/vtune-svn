@@ -34,5 +34,6 @@ private:
 	unsigned short fft_size;
 	unsigned short samples_size;
 	unsigned short max_peek;
+	bool solid;
 };
 

@@ -46,6 +46,7 @@ void vSpectrum::paint(QPainter *painter, QPaintEvent *event)
 	painter->setPen(pen1);
 	painter->drawLine(0, half_height, width, half_height);
 	int last_pt = 0;
+	int last_pt1 = 0;
 	for (unsigned short i = 0; i < width; i ++)
 	{
 		double delta = fftmag_lut [i] - fftmag [i];
@@ -58,7 +59,18 @@ void vSpectrum::paint(QPainter *painter, QPaintEvent *event)
 			painter->setPen(pen3);
 		else
 			painter->setPen(pen1);
-		painter->drawLine(i, height, i, height - pt);
+		if(solid)
+			painter->drawLine(i, height, i, height - pt);
+		else
+			if(!i)
+				painter->drawLine(i, height - pt, i, height - pt);
+			else
+				painter->drawLine(i - 1, height - last_pt, i, height - pt);
+
+		last_pt = pt;
+			
+		
+			
 		/*if (pt < height)
 		{
 			painter->setPen(pen2);
@@ -74,13 +86,13 @@ void vSpectrum::paint(QPainter *painter, QPaintEvent *event)
 		if(!i)
 			painter->drawLine(i, pt, i, pt);
 		else
-			painter->drawLine(i - 1, last_pt, i, pt);
+			painter->drawLine(i - 1, last_pt1, i, pt);
 		//painter->setPen(pen2);
 		//painter->drawLine(i, half_height - pt, i, half_height - pt - 1);
 		
 		//painter->drawLine(i, half_height, i, half_height - pt);
 		//painter->drawPoint(i, pt);
-		last_pt = pt;
+		last_pt1 = pt;
 	}
 
 }
@@ -97,6 +109,7 @@ void vSpectrum::paintEvent(QPaintEvent *event)
 
 void vSpectrum::SetData(vtune_data *data)
 {
+	solid = data->solid;
 	if (data->fft_size != fft_size)
 	{
 		fft_size = data->fft_size;
