@@ -210,3 +210,8 @@ void vTune::TrackData()
 	if(callback)
 		callback(&data);
 }
+
+vTuneTrack *vTune::GetTracker()
+{
+	return tracker;
+}

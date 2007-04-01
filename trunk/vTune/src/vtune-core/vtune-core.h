@@ -74,6 +74,7 @@ public:
 	{
 		return tracker->GetSize();
 	};
+	vTuneTrack *GetTracker();
 private:
 	static int Process(jack_nframes_t nframes, void *arg);
 	void TrackData();

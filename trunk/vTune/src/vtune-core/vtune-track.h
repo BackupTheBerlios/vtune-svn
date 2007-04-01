@@ -31,7 +31,7 @@ public:
 	{
 		return process_size;
 	};
-	
+	void SetType(vtune_track_type _type);
 private:
 	void TrackFFT1(jack_default_audio_sample_t *buffer, vtune_data *data);
 	void TrackACF(jack_default_audio_sample_t *buffer, vtune_data *data);

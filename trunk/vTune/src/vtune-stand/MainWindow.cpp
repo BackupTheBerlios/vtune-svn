@@ -40,7 +40,20 @@ vMainWindow::vMainWindow(QWidget *Parent) : QWidget(Parent)
 	freqMag->show();
 	connect(quitbtn, SIGNAL(clicked()), qApp, SLOT(quit()));
 	connect(this, SIGNAL(spectrumChanged(vtune_data *)), this, SLOT(RepaintSpectrum(vtune_data *)));
-	vTune *vtune = new vTune();
+	typeBox = new QComboBox(this);
+	typeBox->addItem(QString("FFT1"), QVariant(VTRACK_FFT1));
+	typeBox->addItem(QString("HPS"), QVariant(VTRACK_HPS));
+	typeBox->addItem(QString("ACF"), QVariant(VTRACK_ACF));
+	typeBox->show();
+	connect(typeBox, SIGNAL(currentIndexChanged(int)), this, SLOT(ChangeType(int)));
+	splitter = new QSplitter(Qt::Vertical, this);
+	splitter->addWidget(spectrum);
+	splitter->addWidget(quitbtn);
+	splitter->addWidget(freqText);
+	splitter->addWidget(freqMag);
+	splitter->addWidget(typeBox);
+	splitter->show();
+	vtune = new vTune();
 	if (!vtune->Init())
 	{
 		exit(1);
@@ -48,14 +61,10 @@ vMainWindow::vMainWindow(QWidget *Parent) : QWidget(Parent)
 	int width = vtune->GetSize() / 2;
 	width = width > 512 ? 512 : width;
 	spectrum->resize(QSize(width, 300));
-	splitter = new QSplitter(Qt::Vertical, this);
-	splitter->addWidget(spectrum);
-	splitter->addWidget(quitbtn);
-	splitter->addWidget(freqText);
-	splitter->addWidget(freqMag);
 	splitter->resize(QSize(width, 500));
-	splitter->show();
 	vtune->SetCallback(callback, this);
+	vtune->GetTracker()->SetType(VTRACK_FFT1);
+	
 }
 
 void vMainWindow::Close()
@@ -79,4 +88,25 @@ void vMainWindow::callback(vtune_data *data)
 	vMainWindow *mainWindow = (vMainWindow *)data->arg;
 	mainWindow->spectrum->SetData(data);
 	mainWindow->emit spectrumChanged(data);
+}
+
+void vMainWindow::ChangeType(int index)
+{
+	//VTUNE_DBG("%d", index);
+	switch(index)
+	{
+	case 0:
+		vtune->GetTracker()->SetType(VTRACK_FFT1);
+		break;
+	case 1:
+		vtune->GetTracker()->SetType(VTRACK_HPS);
+		break;
+	case 2:
+		vtune->GetTracker()->SetType(VTRACK_ACF);
+		break;
+	default:
+		break;
+	}
+	
+	
 }

@@ -26,5 +26,6 @@
 #include <QPaintEvent>
 #include <QLabel>
 #include <QSplitter>
+#include <QComboBox>
 #include <MainWindow.h>
 #include <Spectrum.h>

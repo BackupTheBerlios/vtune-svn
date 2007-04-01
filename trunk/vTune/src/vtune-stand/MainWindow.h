@@ -14,10 +14,13 @@ private:
 	QLabel *freqText;
 	QLabel *freqMag;
 	QSplitter *splitter;
-private slots:
+	QComboBox *typeBox;
+public slots:
 	void RepaintSpectrum(vtune_data *data);
+	void ChangeType(int index);
 signals:
 	void spectrumChanged(vtune_data *data);
-
+	void trackerTypeChanged(int index);
+	
 };
 
