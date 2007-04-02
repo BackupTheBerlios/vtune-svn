@@ -183,30 +183,10 @@ void vTune::SetCallback(VTUNE_CALLBACK *_callback, void *_arg)
 void vTune::TrackData()
 {
 	data.solid = true;
-	tracker->Track(track_buffer, &data);
-	/*static double *buff = 0;
-	if(!buff)
-		buff = new double [process_size];
-
-	//double max_peek = 0.1;
-	
-	for(unsigned short i = 0; i < process_size; i++)
-	{
-		buff [i] = fabs(track_buffer [i]);
-		if(buff [i] > max_peek)
-			max_peek = buff [i];
-	}
-
-	VTUNE_DBG("max_peek = %f", max_peek);
-	
-	for(unsigned short i = 0; i < process_size; i++)
-	{
-		buff [i] /= max_peek;
-	}
-	
-	data.fft_mag = buff;*/
 	data.samples = track_buffer;
 	data.samples_size = process_size;
+	tracker->Track(track_buffer, &data);
+	
 	if(callback)
 		callback(&data);
 }

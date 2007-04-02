@@ -249,7 +249,7 @@ void vTuneTrack::TrackACF(jack_default_audio_sample_t *buffer, vtune_data *data)
 	{
 		for(unsigned short i = 1; i < acf_size; i++)
 		{
-			data->fft_mag [start - 1] += fabs(buffer [i] * buffer [i + start]);
+			data->fft_mag [start - 1] += fabs(buffer [i] - buffer [i + start]);
 			/*if(cnt++ < 10)
 			{
 				VTUNE_DBG("ACF: %f, %f", data->fft_mag [cnt], fabs(buffer [i]));
