@@ -245,19 +245,47 @@ void vTuneTrack::TrackACF(jack_default_audio_sample_t *buffer, vtune_data *data)
 	unsigned short start;
 	memset(data->fft_mag, 0, process_size * sizeof(double));
 	unsigned short acf_size = process_size >> 1;
+	double last_sample = 0;
+	bool flag = false;
+	unsigned short stop = 0;
+	bool up = true;
+	double tresh = 0.7;
 	for(unsigned short start = 1; start < acf_size; start++)
 	{
 		for(unsigned short i = 1; i < acf_size; i++)
 		{
-			data->fft_mag [start - 1] += fabs(buffer [i] - buffer [i + start]);
+			data->fft_mag [start - 1] += fabs(buffer [i + start] - buffer [i]);
 			/*if(cnt++ < 10)
 			{
 				VTUNE_DBG("ACF: %f, %f", data->fft_mag [cnt], fabs(buffer [i]));
 			}*/
 		}
-	}
 
-	data->fft_size = acf_size - 1;
+		data->fft_mag [start - 1] /= acf_size;
+		
+		if(up)
+		{
+			if(last_sample > data->fft_mag [start - 1])
+				up = false;
+		}
+		else
+		{
+			if(last_sample < data->fft_mag [start - 1])
+			{
+				up = true;
+				if(last_sample <= tresh)
+				{
+					stop = start - 1;
+					goto _found;
+				}
+			}
+		}
+		last_sample = data->fft_mag [start - 1];
+	}
+	
+_found:
+	VTUNE_DBG("stop = %d", stop);
+	data->fft_size = stop;
 	data->fft_res = 0;
 
 	double max_peek = 1;

@@ -36,10 +36,10 @@ void vSpectrum::paint(QPainter *painter, QPaintEvent *event)
 	//painter->fillRect(event->rect(), QBrush(QColor(40,40,40)));
 	painter->setPen(QPen(QColor(200, 200, 200)));
 	int width = event->rect().width();
-	//width = width < 512 ? width : 512;
+	//width = width > fft_size ? width : 512;
 	int height = event->rect().height();
 	int half_height = height >> 1;
-	
+
 	QPen pen1(QColor(0, 0, 0));
 	QPen pen2(QColor(200, 200, 200));
 	QPen pen3(QColor(0, 0, 255));
@@ -49,50 +49,57 @@ void vSpectrum::paint(QPainter *painter, QPaintEvent *event)
 	int last_pt1 = 0;
 	for (unsigned short i = 0; i < width; i ++)
 	{
-		double delta = fftmag_lut [i] - fftmag [i];
-		if (delta < 0)
-			fftmag_lut [i] = fftmag [i];
-		else
-			fftmag_lut [i] -= (delta / 4);
-		int pt = fftmag_lut [i] * half_height;
-		if (i == max_peek)
-			painter->setPen(pen3);
-		else
-			painter->setPen(pen1);
-		if(solid)
-			painter->drawLine(i, height, i, height - pt);
-		else
-			if(!i)
-				painter->drawLine(i, height - pt, i, height - pt);
+		int pt;
+		if (i < fft_size)
+		{
+			double delta = fftmag_lut [i] - fftmag [i];
+			if (delta < 0)
+				fftmag_lut [i] = fftmag [i];
 			else
-				painter->drawLine(i - 1, height - last_pt, i, height - pt);
+				fftmag_lut [i] -= (delta / 4);
+			pt = fftmag_lut [i] * half_height;
+			if (i == max_peek)
+				painter->setPen(pen3);
+			else
+				painter->setPen(pen1);
+			if (solid)
+				painter->drawLine(i, height, i, height - pt);
+			else
+				if (!i)
+					painter->drawLine(i, height - pt, i, height - pt);
+				else
+					painter->drawLine(i - 1, height - last_pt, i, height - pt);
 
-		last_pt = pt;
-			
-		
-			
+			last_pt = pt;
+		}
+
+
+
 		/*if (pt < height)
 		{
 			painter->setPen(pen2);
 			painter->drawLine(i, height - pt, i, half_height);
 		}*/
-		
-		int offset = (half_height >> 1);
 
-		painter->setPen(pen1);
-		pt = samples [i] * half_height;
-		pt = offset + pt;
+		if (i < samples_size)
+		{
+			int offset = (half_height >> 1);
 
-		if(!i)
-			painter->drawLine(i, pt, i, pt);
-		else
-			painter->drawLine(i - 1, last_pt1, i, pt);
-		//painter->setPen(pen2);
-		//painter->drawLine(i, half_height - pt, i, half_height - pt - 1);
-		
-		//painter->drawLine(i, half_height, i, half_height - pt);
-		//painter->drawPoint(i, pt);
-		last_pt1 = pt;
+			painter->setPen(pen1);
+			pt = samples [i] * half_height;
+			pt = offset + pt;
+
+			if (!i)
+				painter->drawLine(i, pt, i, pt);
+			else
+				painter->drawLine(i - 1, last_pt1, i, pt);
+			//painter->setPen(pen2);
+			//painter->drawLine(i, half_height - pt, i, half_height - pt - 1);
+
+			//painter->drawLine(i, half_height, i, half_height - pt);
+			//painter->drawPoint(i, pt);
+			last_pt1 = pt;
+		}
 	}
 
 }
@@ -110,9 +117,8 @@ void vSpectrum::paintEvent(QPaintEvent *event)
 void vSpectrum::SetData(vtune_data *data)
 {
 	solid = data->solid;
-	if (data->fft_size != fft_size)
+	if (data->fft_size > fft_size)
 	{
-		fft_size = data->fft_size;
 		if (fftmag)
 		{
 			delete [] fftmag;
@@ -126,9 +132,8 @@ void vSpectrum::SetData(vtune_data *data)
 		}
 	}
 
-	if(data->samples_size != samples_size)
+	if(data->samples_size > samples_size)
 	{
-		samples_size = data->samples_size;
 		if(samples)
 		{
 			delete [] samples;
@@ -136,6 +141,9 @@ void vSpectrum::SetData(vtune_data *data)
 		}
 		
 	}
+
+	fft_size = data->fft_size;
+	samples_size = data->samples_size;
 
 	if (!fftmag)
 	{
