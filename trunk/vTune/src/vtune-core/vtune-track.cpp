@@ -403,7 +403,6 @@ void vTuneTrack::Track(jack_default_audio_sample_t *buffer, vtune_data *data)
 
 void vTuneTrack::SetType(vtune_track_type _type)
 {
-	VTUNE_DBG("!!!");
 	type = _type;
 }
 
