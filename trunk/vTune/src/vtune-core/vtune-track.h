@@ -37,6 +37,7 @@ private:
 	void TrackACF(jack_default_audio_sample_t *buffer, vtune_data *data);
 	void TrackHPS(jack_default_audio_sample_t *buffer, vtune_data *data);
 	unsigned short GetPeeks(const double *spectrum, unsigned short size, unsigned short range_left, unsigned short range_right, double treshhold);
+	short GetPeriod(const double *samples, unsigned short size, unsigned short start, unsigned short stop, double treshhold);
 	vtune_track_type type;
 	vTuneFFT *fft;
 	vTuneFFT *fft1;
@@ -56,6 +57,7 @@ private:
 	unsigned short peek_range_left;
 	unsigned short peek_range_right;
 	unsigned short fft_half_size;
+	short last_period;
 };
 
 #endif

@@ -153,7 +153,7 @@ bool vTuneScale::GetNote(const double &freq, vtune_scale &scale, double &shift)
 	if (piano_scale [i].freq == 0)
 		return bValid;
 
-	if(scale.num == piano_scale [i].num)
+	/*if(scale.num == piano_scale [i].num)
 	{
 		if(track_current < track_latency)
 		{
@@ -165,11 +165,11 @@ bool vTuneScale::GetNote(const double &freq, vtune_scale &scale, double &shift)
 		}
 	}
 	else
-		track_current = 0;
+		track_current = 0;*/
 
 	scale.num = piano_scale [i].num;
 	scale.note = piano_scale [i].note;
 	scale.freq = piano_scale [i].freq;
 	shift = piano_scale [i].freq - freq;
-	return bValid;
+	return true;
 }

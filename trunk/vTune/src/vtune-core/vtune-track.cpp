@@ -66,6 +66,7 @@ vTuneTrack::vTuneTrack(vtune_track_type _type, unsigned short _size, jack_nframe
 	peek_range_left = (sample_rate / 2) / 1500;
 
 	fft_half_size = process_size >> 1;
+	last_period = -1;
 
 	VTUNE_DBG("Processing range: %d - %d.", peek_range_left, peek_range_right);
 }
@@ -235,74 +236,104 @@ unsigned short vTuneTrack::GetPeeks(const double *spectrum, unsigned short size,
 
 }
 
+short vTuneTrack::GetPeriod(const double *samples, unsigned short size, unsigned short start, unsigned short stop, double treshhold)
+{
+	
+	/*float max_sample = -1;
+	for(unsigned short i = 0; i < size; i++)
+	{
+		if(samples [i] > max_sample)
+			max_sample = samples [i];
+	}
+	VTUNE_DBG("max_sample = %f", max_sample);
+
+	if(max_sample <= 0.001)
+	{
+		
+		return -1;
+	}*/
+	unsigned short acf_size = size >> 1;
+	double da = 0;
+	double daprev = 0;
+	double corr = 1;
+	double corrprev = 0;
+
+	VTUNE_DBG("Start = %d", start);
+	
+	while((~((daprev < 0) & (da > 0)) | ~(corrprev < treshhold)) & (start < stop))
+	{
+		corrprev = corr;
+		corr = 0;
+		daprev = da;
+		for(unsigned short j = 0; j < acf_size; j++)
+			corr += fabs(samples [j + start] - samples [j]);
+		corr /= acf_size;
+		start++;
+		da = corr - corrprev;
+		//VTUNE_DBG("da = %f, corr = %f", da, corr);
+	}
+
+	VTUNE_DBG("Stop = %d", start);
+
+	if(start == stop)
+		return -1;
+	else
+		start -= 2;
+	return start;
+}
+
 void vTuneTrack::TrackACF(jack_default_audio_sample_t *buffer, vtune_data *data)
 {
 	//VTUNE_DBG("!!");
 	//unsigned short start = 100;
 	data->solid = false;
 	data->fft_mag = fft_mag;
-	int cnt = 0;
-	unsigned short start;
-	memset(data->fft_mag, 0, process_size * sizeof(double));
-	unsigned short acf_size = process_size >> 1;
-	double last_sample = 0;
-	bool flag = false;
-	unsigned short stop = 0;
-	bool up = true;
-	double tresh = 0.7;
-	for(unsigned short start = 1; start < acf_size; start++)
-	{
-		for(unsigned short i = 1; i < acf_size; i++)
-		{
-			data->fft_mag [start - 1] += fabs(buffer [i + start] - buffer [i]);
-			/*if(cnt++ < 10)
-			{
-				VTUNE_DBG("ACF: %f, %f", data->fft_mag [cnt], fabs(buffer [i]));
-			}*/
-		}
+	data->fft_size = process_size;
 
-		data->fft_mag [start - 1] /= acf_size;
-		
-		if(up)
-		{
-			if(last_sample > data->fft_mag [start - 1])
-				up = false;
-		}
-		else
-		{
-			if(last_sample < data->fft_mag [start - 1])
-			{
-				up = true;
-				if(last_sample <= tresh)
-				{
-					stop = start - 1;
-					goto _found;
-				}
-			}
-		}
-		last_sample = data->fft_mag [start - 1];
-	}
+	double max_sample = 0;
 	
-_found:
-	VTUNE_DBG("stop = %d", stop);
-	data->fft_size = stop;
-	data->fft_res = 0;
-
-	double max_peek = 1;
-
-	for(unsigned short i = 0; i < data->fft_size; i++)
+	for(unsigned short i = 0; i < process_size; i++)
 	{
-		double peek = fabs(data->fft_mag [i]);
-		if(peek > max_peek)
-			max_peek = peek;
-		
+		data->fft_mag [i] = buffer [i];
+		if(max_sample < data->fft_mag [i])
+			max_sample = data->fft_mag [i];
 	}
 
-	for (unsigned short i = 0; i < data->fft_size; i++)
+
+	if(max_sample < 0.5)
 	{
-		data->fft_mag [i] /= max_peek;
+		double c = 0.5 / max_sample;
+		for(unsigned short i = 0; i < process_size; i++)
+		{
+			data->fft_mag [i] *= c;
+		}
 	}
-	//VTUNE_DBG("!!!");
+
+	
+	if(last_period > 40)
+		last_period = GetPeriod(data->fft_mag, process_size, last_period - 20, last_period + 20, 0.075);
+	else
+		last_period = GetPeriod(data->fft_mag, process_size, 40, process_size >> 1, 0.075);
+	data->freq = sample_rate / last_period;
+
+
+
+	if(last_period < 40)
+	{
+		last_period = -1;
+		data->freq = 0;
+	}
+
+	for(unsigned short i = 0; i < process_size; i++)
+	{
+		data->fft_mag [i] = data->freq / process_size;
+	}
+
+	VTUNE_DBG("Period = %d, freq = %f", last_period, data->freq);
+
+	data->valid = scale->GetNote(data->freq, data->scale, data->shift);
+
+	
 
 }
 
